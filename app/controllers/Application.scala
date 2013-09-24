@@ -1,22 +1,30 @@
 package controllers
 
+import scala.collection.JavaConversions._
 import scala.concurrent.Await
 import scala.concurrent.Future
-import scala.concurrent.duration._
+import scala.concurrent.duration.DurationInt
 
-import akka.actor.Props
-import akka.pattern._
+import akka.actor._
+import akka.pattern.ask
 import akka.util.Timeout
-import backend._
+import akka.util.Timeout.durationToTimeout
+import backend.Evaluation
+import backend.MasterActor
+import backend.Ping
 import backend.PingActor
+import backend.PingMasterActor
+import backend.PingResponse
+import backend.RequestId
+import backend.RequestWebSocket
+import backend.WebSocketResponse
 import play.api._
 import play.api.Play.current
-import play.api.libs.concurrent._
-import play.api.libs.concurrent.Execution.Implicits._
-import play.api.libs.json._
-import play.api.libs.ws._
+import play.api.libs.concurrent.Akka
+import play.api.libs.concurrent.Execution.Implicits.defaultContext
+import play.api.libs.json.JsValue
+import play.api.libs.json.Json
 import play.api.mvc._
-import scala.collection.JavaConversions._
 
 object Application extends Controller {
 

@@ -1,15 +1,13 @@
 package backend
 
-import akka.actor.Actor
-import akka.actor.ActorLogging
-import akka.actor.ActorRef
-import akka.actor.Props
-import play.api.libs.json.JsValue
-import play.api.libs.iteratee.Iteratee
-import play.api.libs.iteratee.Enumerator
-import play.api.libs.json._
-import scala.concurrent.duration._
+import scala.concurrent.duration.DurationInt
+
+import akka.actor._
+import akka.actor.actorRef2Scala
 import play.api.libs.iteratee.Concurrent
+import play.api.libs.iteratee.Iteratee
+import play.api.libs.json.JsValue
+import play.api.libs.json.Json
 
 class PingMasterActor(masterActor: ActorRef) extends Actor with ActorLogging {
 
@@ -51,14 +49,12 @@ class PingActor(masterActor: ActorRef) extends Actor with ActorLogging {
   implicit val ec = context.dispatcher
   
   val (out, outChannel) = Concurrent.broadcast[JsValue]
-   // Items placed in this Enumerator get sent to the browser via the websocket
-  // val out:PushEnumerator[JsValue] = Enumerator.imperative[JsValue]()
 
   // This handles any messages sent from the browser to the server over the socket
   val in = Iteratee.foreach[JsValue] { message =>
 	// just take the socket data and send it as an akka message to our parent
 	context.parent ! message
-  }.mapDone { _ =>
+  }.map { _ =>
 	// tell the parent we've quit
 	context.parent ! Quit
   }

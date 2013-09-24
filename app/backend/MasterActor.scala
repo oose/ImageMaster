@@ -1,12 +1,11 @@
 package backend
 
-import akka.routing._
-import scala.concurrent.duration._
-import play.api.Play
-import akka.actor.ActorLogging
-import akka.actor.Actor
-import akka.actor.ActorRef
-import akka.actor.Props
+import scala.concurrent.duration.DurationInt
+
+import akka.actor._
+import akka.routing.BroadcastRouter
+import akka.routing.RoundRobinRouter
+import akka.routing.ScatterGatherFirstCompletedRouter
 
 class MasterActor(serverNames : List[String]) extends Actor with ActorLogging {
   

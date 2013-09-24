@@ -1,25 +1,22 @@
 package backend
 
-import akka.actor.ActorLogging
-import akka.actor.Actor
-import akka.pattern._
-import play.api.libs.ws.WS
-import scala.concurrent.Future
-import play.api.libs.ws.Response
-import scala.concurrent.Await
-import scala.concurrent.duration._
-import scala.util.Try
-import scala.util.Success
 import scala.util.Failure
-import play.api.libs.json._
-import backend.Evaluation._
+import scala.util.Success
+
+import akka.actor._
+import akka.actor.actorRef2Scala
+import akka.pattern.pipe
+import backend.Evaluation.formats
+import play.api.libs.json.Json
+import play.api.libs.ws.WS
 
 class ServerActor(url: String) extends Actor with ActorLogging {
 
   implicit val ec = context.dispatcher
 
-  def imageUrl = s"${url}/image"
-  def pingUrl = s"${url}/ping"
+  val imageUrl = s"${url}/image"
+  val pingUrl = s"${url}/ping"
+  val confUrl = s"${url}/conf"
 
   def receive = {
     case RequestId =>
@@ -28,15 +25,20 @@ class ServerActor(url: String) extends Actor with ActorLogging {
       WS.url(imageUrl).get pipeTo sender
 
     case Ping =>
-      val response = Try(Await.result(WS.url(pingUrl).get, 5.seconds))
-      response match {
-        case Success(response) =>
+      // keep the sender out of the closure
+      val tmpSender = sender
+      // request webservice from image server
+      val responseFuture = WS.url(pingUrl).get
+      
+      // register nonblocking callback
+      responseFuture.onComplete {
+        case Success(response) => 
           response.status match {
-            case 200 => sender ! Pong(url)
-            case _ => sender ! TimeoutPong(url)
+            case 200 => tmpSender ! Pong(url)
+            case _ => tmpSender ! TimeoutPong(url)
           }
         case Failure(e) =>
-          	sender ! TimeoutPong(url)
+          	tmpSender ! TimeoutPong(url)
       }
       
     case e: Evaluation => 
