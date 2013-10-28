@@ -1,6 +1,7 @@
 import sbt._
 import Keys._
 import play.Project._
+import com.typesafe.sbt.SbtAtmosPlay.atmosPlaySettings
 
 object ApplicationBuild extends Build {
 
@@ -12,10 +13,13 @@ object ApplicationBuild extends Build {
     "org.webjars" % "angularjs" % "1.2.0rc1",
     "org.webjars" % "bootstrap" % "2.3.2"
   )
-
+  
+  lazy val imageCommon = RootProject(file("../ImageCommon/"))
 
   val main = play.Project(appName, appVersion, appDependencies).settings(
-    // Add your own project settings here      
+    resolvers += "Spring Scala" at "http://repo.springsource.org/milestone/"     
   )
+  .settings(atmosPlaySettings: _*)
+  .aggregate(imageCommon).dependsOn(imageCommon)
 
 }

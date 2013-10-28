@@ -4,14 +4,15 @@ import play.api.libs.json._
 import play.api.libs.functional.syntax._
 import play.api.libs.iteratee.Iteratee
 import play.api.libs.iteratee.Enumerator
+import scala.concurrent.duration.FiniteDuration
 
-case object RequestId
+case object RequestImageId
 case class Evaluation(id: String, tags: List[String])
 case object Ping
 
 sealed trait PingResponse
 case class Pong(id: String) extends PingResponse
-case class TimeoutPong(id: String) extends PingResponse
+case class TimeoutPong(id: String, duration : Option[FiniteDuration] = None) extends PingResponse
 
 trait EvaluationStatus
 case object EvaluationAccepted extends EvaluationStatus
@@ -23,7 +24,8 @@ object PingResponse {
       pr match {
         case Pong(id) =>
           Json.toJson(Map("id" -> id, "state" -> "pong"))
-        case TimeoutPong(id) => Json.toJson(Map("id" -> id, "state" -> "timeout"))
+        case TimeoutPong(id, None) => Json.toJson(Map("id" -> id, "state" -> "timeout"))
+        case TimeoutPong(id, Some(duration)) => Json.toJson(Map("id" -> id, "state" -> "timeout", "remainingDuration" -> duration.toString))
       }
     }
   }

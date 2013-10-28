@@ -1,17 +1,32 @@
 "use strict";
 
-function MasterCtrl($scope, $http) {
+function MasterCtrl($scope, $http, $window) {
+	
+	$scope.pingData = {}
 
-    $scope.pingData = {}
+    $scope.getStyle = function(style) {
+        return style
+    }
 
-
-    $scope.socket = new WebSocket('ws://localhost:10000/ws');
+	// hack to obtain relative ws url
+	var wsUrl = window.location.href.replace(/^http(s?:\/\/.*)\/.*$/, 'ws$1/ws')
+	
+    // configure WebSocket
+    $scope.socket = new WebSocket(wsUrl);
     $scope.socket.onopen = function (event) {
-        console.log('Hello, WebSocket')
+        console.log('opened websocket')
     };
 
+    $scope.socket.onclose = function (event) {
+        console.log('closed websocket')
+    };
+    
+    // close the websocket before the page is unloaded
+    $window.onbeforeunload = function() {
+    	$scope.socket.close()
+    }
+    
     $scope.socket.onmessage = function (event) {
-        console.log(event.data)
         $scope.$apply(function () {
             var wsData = JSON.parse(event.data)
             $scope.pingData["\""+wsData.id +"\""] = wsData.state
@@ -20,10 +35,6 @@ function MasterCtrl($scope, $http) {
     }
 
     $scope.socket.onclose = function (event) {
-        console.log('closed');
-    }
-
-    $scope.getStyle = function(style) {
-        return style
+        console.log('closed websocket');
     }
 }

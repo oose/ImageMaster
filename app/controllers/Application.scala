@@ -1,9 +1,6 @@
 package controllers
 
-import scala.collection.JavaConversions._
-import scala.concurrent.Await
 import scala.concurrent.Future
-import scala.concurrent.duration.DurationInt
 
 import akka.actor._
 import akka.pattern.ask
@@ -15,9 +12,10 @@ import backend.Ping
 import backend.PingActor
 import backend.PingMasterActor
 import backend.PingResponse
-import backend.RequestId
+import backend.RequestImageId
 import backend.RequestWebSocket
 import backend.WebSocketResponse
+import common.config.Configured
 import play.api._
 import play.api.Play.current
 import play.api.libs.concurrent.Akka
@@ -25,29 +23,20 @@ import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json
 import play.api.mvc._
+import util.AppConfig
 
-object Application extends Controller {
+object Application extends Controller with Configured {
 
-  val serverNames =
-    Play.current.configuration.getStringList("image.server").get.toList
+  lazy val appConfig = configured[AppConfig]
 
-  val masterActor = Akka.system.actorOf(Props(new MasterActor(serverNames)), "MasterActor")
+  val masterActor = Akka.system.actorOf(Props(new MasterActor(appConfig.serverNames)), "MasterActor")
   val pingActor = Akka.system.actorOf(Props(new PingActor(masterActor)), "PingActor")
   val pingMasterActor = Akka.system.actorOf(Props(new PingMasterActor(masterActor)), "PingMasterActor")
 
-  implicit val timeout: Timeout = 5.seconds
+  implicit val timeout: Timeout = appConfig.defaultTimeout
 
   def index = Action {
     Ok(views.html.index())
-  }
-
-  /**
-   * ping the state of all server machines.
-   * Not Async!
-   */
-  def ping = Action {
-    val response = Await.result((pingActor ? Ping).mapTo[List[PingResponse]], 5.seconds)
-    Ok(Json.toJson(response))
   }
 
   /**
@@ -56,25 +45,24 @@ object Application extends Controller {
    */
   def image = Action.async {
 
-    val response = (masterActor ? RequestId).mapTo[play.api.libs.ws.Response]
-    response.map(response =>
+    val responseFuture = (masterActor ? RequestImageId).mapTo[play.api.libs.ws.Response]
+    responseFuture.map(response =>
       response.status match {
         case 200 => Ok(response.body)
         case _ => BadRequest(response.body)
       }).recover {
       case connEx: Exception => (ServiceUnavailable(connEx.getMessage))
     }
-
   }
 
   def saveTags = Action.async(parse.json) {
     request =>
+      Logger.info(s"received image evaluation: ${request.body}")
       val id = (request.body \ "id").asOpt[String]
       val tags = (request.body \ "tags").asOpt[List[String]]
 
       (id, tags) match {
         case (Some(id), Some(tags)) =>
-
           val response = (masterActor ? Evaluation(id, tags)).mapTo[String]
           response.map(r => Ok(r))
 
@@ -82,13 +70,16 @@ object Application extends Controller {
       }
   }
 
+  /**
+   * request new websocket channels from the [[backend.PingMasterActor]]
+   */ 
   def ws = WebSocket.async[JsValue] {
     request =>
+      // request new websocket channels from the PingMasterActor
       val response = (pingMasterActor ? RequestWebSocket).mapTo[WebSocketResponse]
       response.map {
         case WebSocketResponse(in, out) =>
           (in, out)
       }
   }
-
 }

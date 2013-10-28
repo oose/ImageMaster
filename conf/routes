@@ -4,8 +4,6 @@
 
 GET    /                controllers.Application.index
 
-GET    /ping            controllers.Application.ping
-
 GET    /image           controllers.Application.image
 
 POST   /image           controllers.Application.saveTags

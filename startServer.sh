@@ -1,5 +1,7 @@
 #!/bin/bash
 
+CMD=./target/universal/stage/bin/imagemaster
+
 play stage
-target/start -Dhttp.port=10000 -Dimage.dir="/Users/markusklink/Pictures/Export/BobWayne/" -Dpidfile.path="PID10000.pid" &
+$CMD  -Dhttp.port=10000 -Dpidfile.path="PID10000.pid" &
 
