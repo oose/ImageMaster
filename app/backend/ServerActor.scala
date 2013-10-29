@@ -1,18 +1,19 @@
 package backend
 
+import scala.concurrent.duration._
+import scala.concurrent.duration.DurationInt
 import scala.util.Failure
 import scala.util.Success
+
 import akka.actor._
 import akka.actor.actorRef2Scala
-import akka.pattern.pipe
-import backend.Evaluation.formats
-import play.api.libs.json.Json
-import play.api.libs.ws.WS
 import akka.event.LoggingReceive
 import akka.pattern.CircuitBreaker
-import scala.concurrent.duration._
 import akka.pattern.CircuitBreakerOpenException
-import scala.concurrent.duration._
+import akka.pattern.pipe
+import play.api.libs.json.Json
+import play.api.libs.ws.WS
+import util.Implicits.formats
 
 /**
  *  Represents a server serving images under url given in the constructor.
@@ -32,14 +33,14 @@ class ServerActor(url: String) extends Actor with ActorLogging {
       callTimeout = 1 seconds,
       resetTimeout = 30 seconds).onOpen(circuitOpen()).onClose(circuitClosed())
 
-  def circuitOpen() = {
+  private def circuitOpen() = {
     log.error("""
         Circuitbreaker is open
         
     """)
   }
 
-  def circuitClosed() = {
+  private def circuitClosed() = {
     log.info("Circuitbreaker is closed")
   }
 
@@ -72,10 +73,10 @@ class ServerActor(url: String) extends Actor with ActorLogging {
         case Failure(e) =>
           e match {
             case cboEx: CircuitBreakerOpenException =>
-              val remainingSeconds = cboEx.remainingDuration.toUnit(MINUTES)
+              val remainingSeconds = cboEx.remainingDuration.toSeconds
               log.info(s"""
                     CircuitBreakerOpenException: ${cboEx.getMessage()}
-                    Remains open for ${remainingSeconds} minutes 
+                    Remains open for ${remainingSeconds} seconds 
                     
                 """)
               currentSender ! TimeoutPong(url, Some(cboEx.remainingDuration))
@@ -85,6 +86,7 @@ class ServerActor(url: String) extends Actor with ActorLogging {
       }
 
     case e: Evaluation =>
+      import util.Implicits._
       log.info(s"""
           received evaluation for ${e.id} in $url
           
@@ -98,6 +100,7 @@ class ServerActor(url: String) extends Actor with ActorLogging {
 
         """)
         //forward the evaluation to the image server
+        // TODO refactor
         WS.url(imageUrl).post(json).onComplete {
           case Success(_) =>
             log.info(s"""

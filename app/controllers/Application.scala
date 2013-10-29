@@ -76,8 +76,8 @@ object Application extends Controller with Configured {
   def ws = WebSocket.async[JsValue] {
     request =>
       // request new websocket channels from the PingMasterActor
-      val response = (pingMasterActor ? RequestWebSocket).mapTo[WebSocketResponse]
-      response.map {
+      val websocketFuture = (pingMasterActor ? RequestWebSocket).mapTo[WebSocketResponse]
+      websocketFuture.map {
         case WebSocketResponse(in, out) =>
           (in, out)
       }

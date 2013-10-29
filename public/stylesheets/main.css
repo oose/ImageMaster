@@ -1,8 +1,8 @@
-.pong {
-	color: white ;
-    background-color: greenyellow;
+
+.backgroundtimeout {
+    background-color: darkred;
 }
 
-.timeout {
-	color: red ;
+.backgroundpong {
+    background-color: darkolivegreen;
 }

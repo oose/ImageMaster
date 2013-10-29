@@ -1,17 +1,17 @@
 package backend
 
 import scala.concurrent.duration.DurationInt
+
 import akka.actor._
 import akka.actor.actorRef2Scala
+import akka.event.LoggingReceive
+import common.config.Configured
 import play.api.libs.iteratee.Concurrent
 import play.api.libs.iteratee.Iteratee
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json
 import util.AppConfig
-import common.config.Configured
-import util.AppConfig
-import akka.event.LoggingReceive
-import akka.pattern.CircuitBreaker
+import util.Implicits.pingResponseWrite
 
 class PingMasterActor(masterActor: ActorRef) extends Actor with ActorLogging {
 
@@ -19,7 +19,7 @@ class PingMasterActor(masterActor: ActorRef) extends Actor with ActorLogging {
   var children = List.empty[ActorRef]
 
   // handle a javascript message from the websocket.
-  def handleJsMessage(msg: JsValue) = {
+  private def handleJsMessage(msg: JsValue) = {
     // just forward it on to all the children
     children.foreach { child =>
       child ! msg
@@ -82,6 +82,7 @@ class PingActor(masterActor: ActorRef) extends Actor with ActorLogging with Conf
       masterActor ! Ping
 
     case pr: PingResponse =>
+      import util.Implicits._
       log.info(s"""
           received ping response $pr
           pushing result to the websocket channel

@@ -14,61 +14,60 @@ import akka.event.LoggingReceive
  * servers for image delivery.
  * It can request new Image ids and helps in monitoring the external server status
  * by broadcasting ping requests to the ServerActors.
- * 
+ *
  */
-class MasterActor(serverNames : List[String]) extends Actor with ActorLogging with Configured {
-  
+class MasterActor(serverNames: List[String]) extends Actor with ActorLogging with Configured {
+
   lazy val appConfig = configured[AppConfig]
 
-  val serverActors : Map[String,ActorRef] =
+  val serverActors: Map[String, ActorRef] =
     (serverNames.zipWithIndex.map {
       case (url, index) => (url, createServerActor(url, "ServerActor" + index))
     }).toMap
-    
+
   val serverRoutees = serverActors.values.toVector
- 
+
   val roundRobinRouter =
     context.actorOf(Props.empty.withRouter(
-      RoundRobinRouter(routees = serverRoutees)), 
+      RoundRobinRouter(routees = serverRoutees)),
       "RoundRobinRouter")
 
   val broadCastRouter =
     context.actorOf(Props.empty.withRouter(
-      BroadcastRouter(routees = serverRoutees)), 
+      BroadcastRouter(routees = serverRoutees)),
       "BroadCastRouter")
-      
-  val scatterGatherRouter = 
+
+  val scatterGatherRouter =
     context.actorOf(Props.empty.withRouter(
-        ScatterGatherFirstCompletedRouter(routees = serverRoutees, within = appConfig.defaultTimeout)), 
-        "ScatterGatherRouter")
+      ScatterGatherFirstCompletedRouter(routees = serverRoutees, within = appConfig.defaultTimeout)),
+      "ScatterGatherRouter")
 
   private def createServerActor(url: String, name: String): ActorRef = {
     context.actorOf(Props(new ServerActor(url)), name)
   }
 
-  def receive = LoggingReceive
-    {
-      case RequestImageId =>
-        log.info("""
+  def receive = LoggingReceive {
+    case RequestImageId =>
+      log.info("""
             ----> NEW REQUEST FROM CLIENT FOR AN IMAGE.
             forwarding RequestId to roundRobinRouter
             
         """)
-        roundRobinRouter forward RequestImageId
+      roundRobinRouter forward RequestImageId
 
-      case  e :Evaluation =>
-        log.info("""
+    case e: Evaluation =>
+      log.info("""
             forwarding evaluation to scatterGatherRouter
             
         """)
-        scatterGatherRouter forward e
-        
-      case Ping =>
-        log.info("""
+      scatterGatherRouter forward e
+
+    case Ping =>
+      log.info("""
             forwarding Ping to broadcastRouter
             
         """)
-        broadCastRouter forward Ping
-    }
+      broadCastRouter forward Ping
+  }
 
 }
