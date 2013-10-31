@@ -2,14 +2,15 @@ package backend
 
 import scala.concurrent.duration.DurationInt
 
-import akka.actor._
-import akka.actor.actorRef2Scala
-import akka.event.LoggingReceive
-import common.config.Configured
 import play.api.libs.iteratee.Concurrent
 import play.api.libs.iteratee.Iteratee
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json
+
+import akka.actor._
+import akka.event.LoggingReceive
+
+import common.config.Configured
 import util.AppConfig
 import util.Implicits.pingResponseWrite
 

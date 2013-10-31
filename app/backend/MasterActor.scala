@@ -1,13 +1,11 @@
 package backend
 
 import akka.actor._
-import akka.routing.BroadcastRouter
-import akka.routing.RoundRobinRouter
-import akka.routing.ScatterGatherFirstCompletedRouter
-import util.AppConfig
+import akka.event.LoggingReceive
+import akka.routing._
+
 import common.config.Configured
 import util.AppConfig
-import akka.event.LoggingReceive
 
 /**
  * The MasterActor contains a list of ServerActors which represent the external
@@ -20,10 +18,16 @@ class MasterActor(serverNames: List[String]) extends Actor with ActorLogging wit
 
   lazy val appConfig = configured[AppConfig]
 
-  val serverActors: Map[String, ActorRef] =
-    (serverNames.zipWithIndex.map {
+  /**
+   * The [[Map]] of servers with their URL as key and the responsible Actor as [[akka.actor.ActorRef]].
+   */
+  val serverActors: Map[String, ActorRef] = {
+    def createIndex = serverNames.zipWithIndex
+    def createServerTuple : PartialFunction[(String, Int), (String, ActorRef)] = {
       case (url, index) => (url, createServerActor(url, "ServerActor" + index))
-    }).toMap
+    }
+    createIndex.map { createServerTuple(_) } toMap   
+  }
 
   val serverRoutees = serverActors.values.toVector
 

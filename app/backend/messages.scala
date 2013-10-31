@@ -1,10 +1,10 @@
 package backend
 
-import play.api.libs.json._
-import play.api.libs.functional.syntax._
-import play.api.libs.iteratee.Iteratee
+import scala.concurrent.duration._
+
 import play.api.libs.iteratee.Enumerator
-import scala.concurrent.duration.FiniteDuration
+import play.api.libs.iteratee.Iteratee
+import play.api.libs.json.JsValue
 
 case object RequestImageId
 case class Evaluation(id: String, tags: List[String])

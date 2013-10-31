@@ -1,18 +1,17 @@
 package backend
 
-import scala.concurrent.duration._
 import scala.concurrent.duration.DurationInt
 import scala.util.Failure
 import scala.util.Success
 
+import play.api.libs.json.Json
+import play.api.libs.ws.WS
+
 import akka.actor._
 import akka.actor.actorRef2Scala
 import akka.event.LoggingReceive
-import akka.pattern.CircuitBreaker
-import akka.pattern.CircuitBreakerOpenException
-import akka.pattern.pipe
-import play.api.libs.json.Json
-import play.api.libs.ws.WS
+import akka.pattern._
+
 import util.Implicits.formats
 
 /**
@@ -41,7 +40,10 @@ class ServerActor(url: String) extends Actor with ActorLogging {
   }
 
   private def circuitClosed() = {
-    log.info("Circuitbreaker is closed")
+    log.info("""
+        Circuitbreaker is closed
+        
+    """)
   }
 
   def receive = LoggingReceive {

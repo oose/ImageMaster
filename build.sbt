@@ -1,6 +1,6 @@
-import play.Project._
-
 import com.typesafe.sbt.SbtAtmosPlay.atmosPlaySettings
+
+import play.Project._
 
 libraryDependencies ++= Seq(
   "org.webjars" %% "webjars-play" % "2.2.0",
@@ -11,12 +11,12 @@ libraryDependencies ++= Seq(
 name := "ImageMaster"
 
 version := "1.0-SNAPSHOT"
-
-lazy val ImageCommon = RootProject(file("../ImageCommon/"))
  
-play.Project.playScalaSettings
+playScalaSettings
 
 atmosPlaySettings
 
 val ImageMaster = project.in(file("."))
   .aggregate(ImageCommon).dependsOn(ImageCommon)
+  
+lazy val ImageCommon = RootProject(file("../ImageCommon/"))

@@ -1,14 +1,15 @@
 package util
 
-import backend.PingResponse
-import play.api.libs.json.Writes
-import backend.TimeoutPong
-import backend.Pong
-import play.api.libs.json.Json
-import play.api.libs.json.JsValue
-import backend.Evaluation
-import play.api.libs.json.JsSuccess
 import play.api.libs.json.Format
+import play.api.libs.json.JsSuccess
+import play.api.libs.json.JsValue
+import play.api.libs.json.Json
+import play.api.libs.json.Writes
+
+import backend.Evaluation
+import backend.PingResponse
+import backend.Pong
+import backend.TimeoutPong
 
 class LowlevelImplicits {
   implicit val pingResponseWrite: Writes[PingResponse] = new Writes[PingResponse] {

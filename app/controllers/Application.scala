@@ -2,38 +2,44 @@ package controllers
 
 import scala.concurrent.Future
 
-import akka.actor._
-import akka.pattern.ask
-import akka.util.Timeout
-import akka.util.Timeout.durationToTimeout
-import backend.Evaluation
-import backend.MasterActor
-import backend.Ping
-import backend.PingActor
-import backend.PingMasterActor
-import backend.PingResponse
-import backend.RequestImageId
-import backend.RequestWebSocket
-import backend.WebSocketResponse
-import common.config.Configured
 import play.api._
 import play.api.Play.current
 import play.api.libs.concurrent.Akka
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.JsValue
-import play.api.libs.json.Json
 import play.api.mvc._
+
+import akka.actor._
+import akka.pattern.ask
+import akka.util._
+import akka.util.Timeout.durationToTimeout
+
+import backend.Evaluation
+import backend.MasterActor
+import backend.PingActor
+import backend.PingMasterActor
+import backend.RequestImageId
+import backend.RequestWebSocket
+import backend.WebSocketResponse
+import common.akka.AkkaUtil.createActor
+import common.config.Configured
 import util.AppConfig
 
 object Application extends Controller with Configured {
 
   lazy val appConfig = configured[AppConfig]
+  import common.akka.AkkaUtil._
+  implicit val actorSystem = Akka.system
 
-  val masterActor = Akka.system.actorOf(Props(new MasterActor(appConfig.serverNames)), "MasterActor")
-  val pingActor = Akka.system.actorOf(Props(new PingActor(masterActor)), "PingActor")
-  val pingMasterActor = Akka.system.actorOf(Props(new PingMasterActor(masterActor)), "PingMasterActor")
+  val masterActor = 
+    createActor(Props(new MasterActor(appConfig.serverNames)), "MasterActor")
+  val pingActor = 
+    createActor(Props(new PingActor(masterActor)), "PingActor")
+  val pingMasterActor = 
+    createActor(Props(new PingMasterActor(masterActor)), "PingMasterActor")
 
   implicit val timeout: Timeout = appConfig.defaultTimeout
+  
 
   def index = Action {
     Ok(views.html.index())
@@ -57,7 +63,10 @@ object Application extends Controller with Configured {
 
   def saveTags = Action.async(parse.json) {
     request =>
-      Logger.info(s"received image evaluation: ${request.body}")
+      Logger.info(s"""
+          received image evaluation: ${request.body}
+      
+      """)
       val id = (request.body \ "id").asOpt[String]
       val tags = (request.body \ "tags").asOpt[List[String]]
 
