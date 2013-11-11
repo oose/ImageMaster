@@ -92,4 +92,11 @@ object Application extends Controller with Configured {
           (in, out)
       }
   }
+  
+  def jsRoutes(varName: String = "jsRoutes") = Action { implicit request =>
+    Ok(
+      Routes.javascriptRouter(varName)(
+        routes.javascript.Application.image,
+        routes.javascript.Application.saveTags)).as(JAVASCRIPT)
+  }
 }
