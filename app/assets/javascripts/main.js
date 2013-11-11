@@ -14,7 +14,7 @@
 
     require(["angular", "./controllers/controller"], function (a, ctrl) {
         var app = angular.module("app", []);
-        app.controller("ClientCtrl", ctrl.ClientCtrl);
+        app.controller("MasterCtrl", ctrl.MasterCtrl);
 
         angular.bootstrap(document, ["app"]);
     });
