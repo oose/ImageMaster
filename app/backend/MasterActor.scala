@@ -4,7 +4,7 @@ import akka.actor._
 import akka.event.LoggingReceive
 import akka.routing._
 
-import common.config.Configured
+import oose.play.config.Configured
 import util.AppConfig
 
 /**
@@ -29,19 +29,19 @@ class MasterActor(serverNames: List[String]) extends Actor with ActorLogging wit
     createIndex.map { createServerTuple(_) } toMap   
   }
 
-  val serverRoutees = serverActors.values.toVector
+  val serverRoutees: Vector[ActorRef] = serverActors.values.toVector
 
-  val roundRobinRouter =
+  val roundRobinRouter: ActorRef =
     context.actorOf(Props.empty.withRouter(
       RoundRobinRouter(routees = serverRoutees)),
       "RoundRobinRouter")
 
-  val broadCastRouter =
+  val broadCastRouter: ActorRef =
     context.actorOf(Props.empty.withRouter(
       BroadcastRouter(routees = serverRoutees)),
       "BroadCastRouter")
 
-  val scatterGatherRouter =
+  val scatterGatherRouter: ActorRef =
     context.actorOf(Props.empty.withRouter(
       ScatterGatherFirstCompletedRouter(routees = serverRoutees, within = appConfig.defaultTimeout)),
       "ScatterGatherRouter")

@@ -1,26 +1,27 @@
 package backend
 
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.DurationInt
 
 import play.api.libs.iteratee.Concurrent
 import play.api.libs.iteratee.Iteratee
-import play.api.libs.json.JsValue
-import play.api.libs.json.Json
+import play.api.libs.json._
 
 import akka.actor._
+import akka.actor.actorRef2Scala
 import akka.event.LoggingReceive
 
-import common.config.Configured
-import util.AppConfig
-import util.Implicits.pingResponseWrite
+import oose.play.config.Configured
+import _root_.util.AppConfig
+import _root_.util.Implicits.pingResponseWrite
 
 class PingMasterActor(masterActor: ActorRef) extends Actor with ActorLogging {
 
   // list of PingActor ActorRefs.  One per websocket client.
-  var children = List.empty[ActorRef]
+  var children: List[ActorRef] = List.empty[ActorRef]
 
   // handle a javascript message from the websocket.
-  private def handleJsMessage(msg: JsValue) = {
+  private def handleJsMessage(msg: JsValue): Unit = {
     // just forward it on to all the children
     children.foreach { child =>
       child ! msg
@@ -38,7 +39,7 @@ class PingMasterActor(masterActor: ActorRef) extends Actor with ActorLogging {
           got a request for a new websocket
       
       """)
-      val pingActor = context.actorOf(Props(new PingActor(masterActor)))
+      val pingActor: ActorRef = context.actorOf(Props(new PingActor(masterActor)))
       children = pingActor :: children
       pingActor forward RequestWebSocket
 
@@ -56,7 +57,7 @@ class PingMasterActor(masterActor: ActorRef) extends Actor with ActorLogging {
 
 class PingActor(masterActor: ActorRef) extends Actor with ActorLogging with Configured {
 
-  implicit val ec = context.dispatcher
+  implicit val ec: ExecutionContext = context.dispatcher
 
   val appConfig = configured[AppConfig]
 
@@ -83,7 +84,7 @@ class PingActor(masterActor: ActorRef) extends Actor with ActorLogging with Conf
       masterActor ! Ping
 
     case pr: PingResponse =>
-      import util.Implicits._
+      
       log.info(s"""
           received ping response $pr
           pushing result to the websocket channel

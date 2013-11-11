@@ -7,6 +7,7 @@ import play.api.Play.current
 import play.api.libs.concurrent.Akka
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.JsValue
+import play.api.libs.ws._
 import play.api.mvc._
 
 import akka.actor._
@@ -22,7 +23,7 @@ import backend.RequestImageId
 import backend.RequestWebSocket
 import backend.WebSocketResponse
 import common.akka.AkkaUtil.createActor
-import common.config.Configured
+import oose.play.config.Configured
 import util.AppConfig
 
 object Application extends Controller with Configured {
@@ -51,7 +52,7 @@ object Application extends Controller with Configured {
    */
   def image = Action.async {
 
-    val responseFuture = (masterActor ? RequestImageId).mapTo[play.api.libs.ws.Response]
+    val responseFuture = (masterActor ? RequestImageId).mapTo[Response]
     responseFuture.map(response =>
       response.status match {
         case 200 => Ok(response.body)

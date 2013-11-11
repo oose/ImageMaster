@@ -15,31 +15,31 @@ import akka.pattern._
 import util.Implicits.formats
 
 /**
- *  Represents a server serving images under url given in the constructor.
+ *  Represents a server serving images.
  *
  */
 class ServerActor(url: String) extends Actor with ActorLogging {
-
+ 
   implicit val ec = context.dispatcher
 
   val imageUrl = s"${url}/image"
   val pingUrl = s"${url}/ping"
   val confUrl = s"${url}/conf"
 
-  val breaker =
+  val breaker: CircuitBreaker =
     new CircuitBreaker(context.system.scheduler,
       maxFailures = 3,
       callTimeout = 1 seconds,
       resetTimeout = 30 seconds).onOpen(circuitOpen()).onClose(circuitClosed())
 
-  private def circuitOpen() = {
+  private def circuitOpen() : Unit = {
     log.error("""
         Circuitbreaker is open
         
     """)
   }
 
-  private def circuitClosed() = {
+  private def circuitClosed() : Unit= {
     log.info("""
         Circuitbreaker is closed
         

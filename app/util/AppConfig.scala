@@ -7,26 +7,26 @@ import scala.concurrent.duration.MILLISECONDS
 import play.api._
 
 class AppConfig {
-  
-   val serverNames = {
-      val value = Play.current.configuration.getStringList("imagemaster.serverlist")
-      value match {
-        case Some(names) => names.toList
-        case None =>
-          throw Play.current.configuration.globalError("Missing configuration key: [image.server]")
-      } 
-   }
-   
-   val defaultTimeout : FiniteDuration =  timeOutValue("imagemaster.defaulttimeout")
-   
-   val pingRepeat = timeOutValue("imagemaster.pingrepeat")
-   
-   private def timeOutValue(key: String) : FiniteDuration = {
-      val value = Play.current.configuration.getMilliseconds(key)
-      value match {
-        case Some(duration) => FiniteDuration(duration, MILLISECONDS)
-        case None =>
-          throw Play.current.configuration.globalError(s"Missing configuration key: [$key]")
-      } 
-   }
+
+  val serverNames: List[String] = {
+    val value = Play.current.configuration.getStringList("imagemaster.serverlist")
+    value match {
+      case Some(names) => names.toList
+      case None =>
+        throw Play.current.configuration.globalError("Missing configuration key: [image.server]")
+    }
+  }
+
+  val defaultTimeout: FiniteDuration = timeOutValue("imagemaster.defaulttimeout")
+
+  val pingRepeat: scala.concurrent.duration.FiniteDuration = timeOutValue("imagemaster.pingrepeat")
+
+  private def timeOutValue(key: String): FiniteDuration = {
+    val value = Play.current.configuration.getMilliseconds(key)
+    value match {
+      case Some(duration) => FiniteDuration(duration, MILLISECONDS)
+      case None =>
+        throw Play.current.configuration.globalError(s"Missing configuration key: [$key]")
+    }
+  }
 }
