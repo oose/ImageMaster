@@ -2,7 +2,13 @@
 
 
 echo -e "\033[1m"
-figlet ImageMaster
+
+if hash figlet 2>/dev/null; then
+    figlet ImageMaster
+else
+    echo -e ImageMaster
+fi
+
 echo -e "\033[0m"
 
 echo -e "\033[1mStaging application\033[0m"
