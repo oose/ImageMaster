@@ -12,7 +12,7 @@ import akka.actor.actorRef2Scala
 import akka.event.LoggingReceive
 
 import oose.play.config.Configured
-import _root_.util.AppConfig
+import _root_.util.ApplicationConfiguration
 import _root_.util.Implicits.pingResponseWrite
 
 class PingMasterActor(masterActor: ActorRef) extends Actor with ActorLogging {
@@ -59,7 +59,7 @@ class PingActor(masterActor: ActorRef) extends Actor with ActorLogging with Conf
 
   implicit val ec: ExecutionContext = context.dispatcher
 
-  val appConfig = configured[AppConfig]
+  val appConfig = configured[ApplicationConfiguration]
 
   val (out, outChannel) = Concurrent.broadcast[JsValue]
 

@@ -5,7 +5,7 @@ import akka.event.LoggingReceive
 import akka.routing._
 
 import oose.play.config.Configured
-import util.AppConfig
+import util.ApplicationConfiguration
 
 /**
  * The MasterActor contains a list of ServerActors which represent the external
@@ -16,7 +16,7 @@ import util.AppConfig
  */
 class MasterActor(serverNames: List[String]) extends Actor with ActorLogging with Configured {
 
-  lazy val appConfig = configured[AppConfig]
+  lazy val appConfig = configured[ApplicationConfiguration]
 
   /**
    * The [[Map]] of servers with their URL as key and the responsible Actor as [[akka.actor.ActorRef]].

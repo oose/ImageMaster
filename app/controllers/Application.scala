@@ -5,7 +5,7 @@ import play.api._
 import play.api.Play.current
 import play.api.libs.concurrent.Akka
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.libs.json.JsValue
+import play.api.libs.json._
 import play.api.libs.ws._
 import play.api.mvc._
 import akka.actor._
@@ -20,12 +20,12 @@ import backend.RequestImageId
 import backend.RequestWebSocket
 import backend.WebSocketResponse
 import oose.play.config.Configured
-import util.AppConfig
 import oose.play.actions.CorsAction
+import _root_.util.ApplicationConfiguration
 
 object Application extends Controller with Configured {
 
-  lazy val appConfig = configured[AppConfig]
+  lazy val appConfig = configured[ApplicationConfiguration]
   implicit val actorSystem = Akka.system
 
   val masterActor =
@@ -53,7 +53,9 @@ object Application extends Controller with Configured {
           case 200 => Ok(response.body)
           case _ => BadRequest(response.body)
         }).recover {
-        case connEx: Exception => (ServiceUnavailable(connEx.getMessage))
+        case connEx: Exception =>
+          Logger.error(connEx.getMessage)
+          ServiceUnavailable(Json.toJson(Map("error" -> connEx.getMessage)))
       }
     }
   }

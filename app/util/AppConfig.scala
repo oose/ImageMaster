@@ -6,7 +6,13 @@ import scala.concurrent.duration.MILLISECONDS
 
 import play.api._
 
-class AppConfig {
+trait ApplicationConfiguration {
+  val serverNames : List[String]
+  val defaultTimeout : FiniteDuration
+  val pingRepeat : FiniteDuration
+}
+
+class AppConfig extends ApplicationConfiguration {
 
   val serverNames: List[String] = {
     val value = Play.current.configuration.getStringList("imagemaster.serverlist")
@@ -19,7 +25,7 @@ class AppConfig {
 
   val defaultTimeout: FiniteDuration = timeOutValue("imagemaster.defaulttimeout")
 
-  val pingRepeat: scala.concurrent.duration.FiniteDuration = timeOutValue("imagemaster.pingrepeat")
+  val pingRepeat: FiniteDuration = timeOutValue("imagemaster.pingrepeat")
 
   private def timeOutValue(key: String): FiniteDuration = {
     val value = Play.current.configuration.getMilliseconds(key)
