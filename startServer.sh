@@ -15,7 +15,7 @@ echo -e "\033[1mStaging application\033[0m"
 
 CMD=./target/universal/stage/bin/imagemaster
 
-play stage
+sbt stage
 
 echo -e "\033[1mInvoking master\033[0m"
 

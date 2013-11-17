@@ -10,7 +10,8 @@ libraryDependencies ++= Seq(
   "org.webjars" % "bootstrap" % "2.3.2",
   "oose.play" %% "config" % "1.0-SNAPSHOT",
   "oose.play" %% "actions" % "1.0-SNAPSHOT",
-  "org.specs2" % "classycle" % "1.4.1" % "test"
+  "org.specs2" % "classycle" % "1.4.1" % "test",
+  "org.mockito" % "mockito-all" % "1.9.5" % "test"
 )  
 
 name := "ImageMaster"

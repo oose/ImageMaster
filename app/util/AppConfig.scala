@@ -2,37 +2,55 @@ package util
 
 import scala.collection.JavaConversions._
 import scala.concurrent.duration._
-import scala.concurrent.duration.MILLISECONDS
-
 import play.api._
+import play.api.libs.json.JsValue
+import scala.concurrent.Future
+import play.api.libs.ws.Response
 
 trait ApplicationConfiguration {
-  val serverNames : List[String]
-  val defaultTimeout : FiniteDuration
-  val pingRepeat : FiniteDuration
+
+  val service: ExternalRequestService
+  
+  val serverNames: List[String]
+  
+  val defaultTimeout: FiniteDuration
+  
+  val pingRepeat: FiniteDuration
+
+}
+
+trait ExternalRequestService {
+
+  def requestImage(url: String): Future[Response]
+
+  def postImage(url: String, json: JsValue): Future[Response]
+
+  def ping(url: String): Future[Response]
 }
 
 class AppConfig extends ApplicationConfiguration {
 
-  val serverNames: List[String] = {
-    val value = Play.current.configuration.getStringList("imagemaster.serverlist")
-    value match {
-      case Some(names) => names.toList
-      case None =>
+  val service = new WebserviceRequestService {}
+
+  lazy val serverNames: List[String] = {
+    Play.current.configuration
+      .getStringList("imagemaster.serverlist")
+      .map(_.toList)
+      .getOrElse {
         throw Play.current.configuration.globalError("Missing configuration key: [image.server]")
-    }
+      }
   }
 
-  val defaultTimeout: FiniteDuration = timeOutValue("imagemaster.defaulttimeout")
+  lazy val defaultTimeout: FiniteDuration = timeOutValue("imagemaster.defaulttimeout")
 
-  val pingRepeat: FiniteDuration = timeOutValue("imagemaster.pingrepeat")
+  lazy val pingRepeat: FiniteDuration = timeOutValue("imagemaster.pingrepeat")
 
   private def timeOutValue(key: String): FiniteDuration = {
-    val value = Play.current.configuration.getMilliseconds(key)
-    value match {
-      case Some(duration) => FiniteDuration(duration, MILLISECONDS)
-      case None =>
+    Play.current.configuration.getMilliseconds(key)
+      .map(d => FiniteDuration(d, MILLISECONDS))
+      .getOrElse {
         throw Play.current.configuration.globalError(s"Missing configuration key: [$key]")
-    }
+      }
   }
 }
+

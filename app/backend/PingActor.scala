@@ -13,57 +13,62 @@ import akka.event.LoggingReceive
 
 import oose.play.config.Configured
 import _root_.util.ApplicationConfiguration
-import _root_.util.Implicits.pingResponseWrite
 
-class PingMasterActor(masterActor: ActorRef) extends Actor with ActorLogging {
+import backend.Implicits._
 
-  // list of PingActor ActorRefs.  One per websocket client.
+class PingMasterActor(val masterActor: ActorRef, val appConfig: ApplicationConfiguration) extends Actor with ActorLogging {
+
+  /**
+   *  list of PingActor ActorRefs.  One per websocket client.
+   */
   var children: List[ActorRef] = List.empty[ActorRef]
 
-  // handle a javascript message from the websocket.
-  private def handleJsMessage(msg: JsValue): Unit = {
-    // just forward it on to all the children
-    children.foreach { child =>
-      child ! msg
-    }
+  /**
+   * handle a javascript message from the websocket.
+   * Send the message to all the children, so that they
+   * receive it as well.
+   * @param msg any Json value send as a message
+   */
+  private def clientMessage: Receive = {
+    case msg: JsValue =>
+      children.foreach { _ ! msg }
   }
 
   def receive = LoggingReceive {
-    case msg: JsValue =>
-      handleJsMessage(msg)
-
-    case RequestWebSocket =>
-      // This is called when a new client connects to the websocket.  We create
-      // a new child Actor and forward this message on to it.
-      log.info("""
+    clientMessage orElse {
+      case RequestWebSocket =>
+        // This is called when a new client connects to the websocket.  We create
+        // a new child Actor and forward this message on to it.
+        log.info("""
           got a request for a new websocket
       
       """)
-      val pingActor: ActorRef = context.actorOf(Props(new PingActor(masterActor)))
-      children = pingActor :: children
-      pingActor forward RequestWebSocket
+        val pingActor: ActorRef = context.actorOf(Props(new PingActor(masterActor, appConfig)))
+        children = pingActor :: children
+        pingActor forward RequestWebSocket
 
-    case Quit =>
-      // A client has disconnected from the websocket
-      log.info("""
+      case Quit =>
+        // A client has disconnected from the websocket
+        log.info("""
           Got a quit message, removing child
           
       """")
-      children = children.filterNot(_ == sender)
-      context.stop(sender)
-
+        children = children.filterNot(_ == sender)
+        context.stop(sender)
+    }
   }
 }
 
-class PingActor(masterActor: ActorRef) extends Actor with ActorLogging with Configured {
+class PingActor(masterActor: ActorRef, val appConfig: ApplicationConfiguration) extends Actor with ActorLogging {
 
   implicit val ec: ExecutionContext = context.dispatcher
 
-  val appConfig = configured[ApplicationConfiguration]
-
   val (out, outChannel) = Concurrent.broadcast[JsValue]
 
-  // This handles any messages sent from the browser to the server over the socket
+  /**
+   * If a client receives a message as Json Message, then it will be send to the parent
+   *  who distributes it to all client actors.
+   */
   val in = Iteratee.foreach[JsValue] { message =>
     // just take the socket data and send it as an akka message to our parent
     context.parent ! message
@@ -71,7 +76,7 @@ class PingActor(masterActor: ActorRef) extends Actor with ActorLogging with Conf
     // tell the parent we've quit
     context.parent ! Quit
   }
-  
+
   override def postStop() {
     log.info("""
         PingActor stopped.
@@ -84,7 +89,6 @@ class PingActor(masterActor: ActorRef) extends Actor with ActorLogging with Conf
       masterActor ! Ping
 
     case pr: PingResponse =>
-      
       log.info(s"""
           received ping response $pr
           pushing result to the websocket channel

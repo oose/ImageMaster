@@ -1,17 +1,8 @@
-package util
+package backend
 
-import play.api.libs.json.Format
-import play.api.libs.json.JsSuccess
-import play.api.libs.json.JsValue
-import play.api.libs.json.Json
-import play.api.libs.json.Writes
+import play.api.libs.json._
 
-import backend.Evaluation
-import backend.PingResponse
-import backend.Pong
-import backend.TimeoutPong
-
-class LowlevelImplicits {
+trait LowlevelImplicits {
   implicit val pingResponseWrite: Writes[PingResponse] = new Writes[PingResponse] {
     override def writes(pr: PingResponse) = {
       pr match {

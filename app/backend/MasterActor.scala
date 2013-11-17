@@ -4,7 +4,6 @@ import akka.actor._
 import akka.event.LoggingReceive
 import akka.routing._
 
-import oose.play.config.Configured
 import util.ApplicationConfiguration
 
 /**
@@ -14,19 +13,20 @@ import util.ApplicationConfiguration
  * by broadcasting ping requests to the ServerActors.
  *
  */
-class MasterActor(serverNames: List[String]) extends Actor with ActorLogging with Configured {
-
-  lazy val appConfig = configured[ApplicationConfiguration]
+class MasterActor(val appConfig: ApplicationConfiguration) extends Actor with ActorLogging {
 
   /**
    * The [[Map]] of servers with their URL as key and the responsible Actor as [[akka.actor.ActorRef]].
    */
   val serverActors: Map[String, ActorRef] = {
-    def createIndex = serverNames.zipWithIndex
-    def createServerTuple : PartialFunction[(String, Int), (String, ActorRef)] = {
+    def createIndex = appConfig.serverNames.zipWithIndex
+
+    def createServerTuple: PartialFunction[(String, Int), (String, ActorRef)] = {
       case (url, index) => (url, createServerActor(url, "ServerActor" + index))
     }
-    createIndex.map { createServerTuple(_) } toMap   
+
+    createIndex
+      .map { createServerTuple(_) } toMap
   }
 
   val serverRoutees: Vector[ActorRef] = serverActors.values.toVector
@@ -47,7 +47,7 @@ class MasterActor(serverNames: List[String]) extends Actor with ActorLogging wit
       "ScatterGatherRouter")
 
   private def createServerActor(url: String, name: String): ActorRef = {
-    context.actorOf(Props(new ServerActor(url)), name)
+    context.actorOf(Props(new ServerActor(url, appConfig)), name)
   }
 
   def receive = LoggingReceive {
@@ -73,5 +73,4 @@ class MasterActor(serverNames: List[String]) extends Actor with ActorLogging wit
         """)
       broadCastRouter forward Ping
   }
-
 }
